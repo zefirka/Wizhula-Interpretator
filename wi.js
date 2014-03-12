@@ -1,5 +1,5 @@
 exports.wi = function(s){
-	var Rnd = definizator();
+	var Rnd = Generator();
 	var Err = ErrorController(); 
 	
 	var stack = {
@@ -34,7 +34,6 @@ exports.wi = function(s){
 			name : "",
 			id : cCount,
 			cid : "cell_" + cCount,
-			tid : Rnd.getNewTid("c"),
 			state : "open",
 			includes : [],
 			value : "",
@@ -215,7 +214,7 @@ exports.wi = function(s){
 	return cells;
 }
 
-function definizator(){
+function Generator(){
 	return {
 		getNewTid : function(l){
 			return "__" + (Math.random()*65536>>0) + "_" + l;
@@ -235,7 +234,7 @@ function ScopeController(){
 	}
 
 	_self.getCurrentScope = function(){
-
+		
 	}
 
 }
