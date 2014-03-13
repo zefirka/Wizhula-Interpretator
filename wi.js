@@ -1,11 +1,13 @@
 exports.wi = function(s){
 	var Rnd = Generator();
 	var Err = ErrorController(); 
-	
+	var Scope = ScopeController();
+
 	var stack = {
 		vx : {}, //value type register
 	};
 
+	
 	var cells = {},
 			cCount = 0,
 		 	currentCellID = "global";
@@ -26,6 +28,7 @@ exports.wi = function(s){
 				Err.errlog(line, character);
 			}
 		}
+		Scope.goToPrevScope();
 		state = "main";
 	}
 
@@ -39,11 +42,13 @@ exports.wi = function(s){
 			value : "",
 			type : "v", //for variable
 			dataType : "undefined",
+			scope : Scope.getCurrentScope("l_id"), //scope level id
 			parent : currentCellID,
 			process : function(x){
 				return x;
 			}
 		}
+
 
 		if(currentCellID!=='global'){
 			cells["cell_" + currentCellID].includes.push("cell_" + newCell.id);	
@@ -51,6 +56,9 @@ exports.wi = function(s){
 		
 		cells[newCell.cid] = newCell;
 		currentCellID = newCell.id;
+		
+		Scope.goToNextScope();		
+
 		//console.log("currentCellID = " + currentCellID);  
 		cCount++;
 	}
@@ -216,13 +224,23 @@ exports.wi = function(s){
 
 function Generator(){
 	return {
-		getNewTid : function(l){
-			return "__" + (Math.random()*65536>>0) + "_" + l;
+		getNewTid : function(){
+			return ( Math.random()*65536 >> 0 ) + "-" + ( Math.random()*65536 >> 0 ) + "-" + ( Math.random()*65536 >> 0 ) + "-" + ( Math.random()*65536 >> 0 );
 		}
 	}
 }
 
 function ScopeController(){
+	var scopes = {
+		current : {
+			l_name : "global",
+			l_id : 0,
+			parent : {},
+			children : []
+		},
+		stack : {}
+	};
+
 	var _self = {};
 
 	_self.isEmpty = function(scope){
@@ -233,10 +251,51 @@ function ScopeController(){
 		}
 	}
 
-	_self.getCurrentScope = function(){
-		
+	//возвращает текущий скоуп
+	_self.getCurrentScope = function(property){
+		if(property){
+			return scopes.current[property];
+		}else{
+			return scopes.current;
+		}		
 	}
 
+	_self.setCurrentScope = function(x){
+		scopes.current = x;
+	}
+
+	_self.goToNextScope = function(){
+		var tmp = Generator();
+
+		scopes.stack[scopes.current.l_name] = scopes.current;
+
+		_self.setCurrentScope({
+			l_name: tmp.getNewTid(),
+			l_id: scopes.current.l_id+1,
+			parent : { l_name : scopes.current.l_name, l_id : scopes.current.l_id },
+			children : []
+		});
+		console.log("scopes is : \n")
+		console.log(scopes);
+
+		console.log("global children: \n");
+		console.log(scopes.stack.global.children);
+	}
+
+	_self.goToPrevScope = function(){
+		scopes.stack[scopes.current.parent.l_name].children.push(scopes.current.l_name);
+		scopes.stack[scopes.current.l_name] = scopes.current;
+
+		_self.setCurrentScope({
+			l_name: scopes.current.parent.l_name,
+			l_id: scopes.current.parent.l_id,
+			parent : scopes.stack[scopes.current.parent.l_name].parent === undefined ? {} : scopes.stack[scopes.current.parent.l_name].parent,
+			children : scopes.stack[scopes.current.parent.l_name].children,
+		});
+		console.log(scopes);
+	}
+
+	return _self;
 }
 
 function ErrorController(){
