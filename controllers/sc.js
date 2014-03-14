@@ -6,11 +6,12 @@ function Generator(){
 	}
 }
 
-exports.ScopeController = function(){
+exports.controller = function(){
 	var scopes = {
 		current : {
 			l_name : "global",
 			l_id : 0,
+			names : [],
 			parent : {},
 			children : []
 		},
@@ -49,13 +50,9 @@ exports.ScopeController = function(){
 			l_name: tmp.getNewTid(),
 			l_id: scopes.current.l_id+1,
 			parent : { l_name : scopes.current.l_name, l_id : scopes.current.l_id },
+			names : [],
 			children : []
 		});
-		console.log("scopes is : \n")
-		console.log(scopes);
-
-		console.log("global children: \n");
-		console.log(scopes.stack.global.children);
 	}
 
 	_self.goToPrevScope = function(){
@@ -68,7 +65,11 @@ exports.ScopeController = function(){
 			parent : scopes.stack[scopes.current.parent.l_name].parent === undefined ? {} : scopes.stack[scopes.current.parent.l_name].parent,
 			children : scopes.stack[scopes.current.parent.l_name].children,
 		});
+	}
+
+	_self.pushName = function(name){
 		console.log(scopes);
+		scopes.current.names.push(name);
 	}
 
 	return _self;

@@ -1,13 +1,14 @@
 exports.wi = function(s){
 	
-	var controllers = require("./controllers/sc.js");
-	var Err = ErrorController(); 
+	var controllers = require("./controllers/controllers.js");
+	
+	var Err = controllers.ErrorController(); 
 	var Scope = controllers.ScopeController();
+	var Validate = controllers.Validator;
 
 	var stack = {
 		vx : {}, //value type register
 	};
-
 	
 	var cells = {},
 			cCount = 0,
@@ -82,7 +83,7 @@ exports.wi = function(s){
 				}else{
 					if(cells["cell_" + currentCellID].name.length){
 						Err.errlog(line,character);
-						throw("Unexpected symbol $");
+						throw("Unexpected symbol $. This cell is already defined as " + cells["cell_" + currentCellID].name + ".");
 					}else{
 						state = "-n";		
 					}					
@@ -152,21 +153,23 @@ exports.wi = function(s){
 		}
 	}
 
-	function process_name(c) {
+	function process_name(c){
 		var curName = cells["cell_" + currentCellID].name;
 		if(c==")"){
 			if(!curName.length){
 				Err.errlog(line, character);
-				throw("Не годиться");
+				Err.endenv("Unexpected symbol )");
 			}else{
+				Scope.pushName(cells["cell_" + currentCellID].name);
 				getOut();
 			}
 		}else
 		if(c=="("){
 			if(!curName.length){
 				Err.errlog(line, character);
-				throw("Не годиться");
+				Err.endenv("Unexpected symbol (");
 			}else{
+				Scope.pushName(cells["cell_" + currentCellID].name);
 				state="main";
 				getIn();
 			}
@@ -174,42 +177,23 @@ exports.wi = function(s){
 		if(c==" "){
 			if(!curName.length){
 				Err.errlog(line, character);
-				throw("Не годиться");
+				Err.endenv("Unexpected symbol space after $");
 			}else{
+				Scope.pushName(cells["cell_" + currentCellID].name);
 				state = "main";
 			}
 		}else
-		if(isApprovedSymbol(c, curName.length, "name")){
+		if(Validate.isApprovedSymbol(c, curName.length, "name")){
 			cells["cell_" + currentCellID].name += c;
 		}else{
 			Err.errlog(line, character);	
-			throw("Unexpected symbol at name:");
+			throw("Unexpected symbol at name.");
 		}
 	}
-
-	function isApprovedSymbol(c, position, key){
-		if(key=="name"){
-			if(position>0){
-				if("!@#$^&*(+=./?\\`'\"[]{}<>,~".indexOf(c)==-1){
-					return true;
-				}else{
-					return false;
-				}
-			}else{
-				if("0123456789!@#$^&*(+=-./?\\`'\"[]{}<>,~".indexOf(c)==-1){
-					return true;
-				}else{
-					return false;
-				}
-			}
-		}
-	}
-
 
 	//main loop
 	for (var i = 0; i < s.length; i++) {
 		var c = s[i];
-
 		if(c=='\n'){
 			line++;
 			character=1;
@@ -234,18 +218,4 @@ exports.wi = function(s){
 	};
 
 	return cells;
-}
-
-function ErrorController(){
-	var _self = {};
-	
-	_self.errlog = function(l, c){
-		console.error("Mismatch at line: " + l + " char: " + c);
-	}
-	
-	_self.endenv = function(msg){
-		throw(msg);
-	}
-
-	return _self;
 }

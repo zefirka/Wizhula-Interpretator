@@ -1,0 +1,13 @@
+exports.controller = function(){
+	var _self = {};
+	
+	_self.errlog = function(l, c){
+		console.error("Mismatch at line: " + l + " char: " + c);
+	}
+	
+	_self.endenv = function(msg){
+		throw(msg);
+	}
+
+	return _self;
+}
